@@ -4,18 +4,12 @@
          loadstring(game:HttpGet(URL))()
     =====================================================
 
-    Design: Flat tactile aesthetic with bottom shadow lip on:
-      * All buttons (normal, close, minimize, bottombar)
-      * Tablist items
-      * Topbar and Bottombar
-      * Content cards, toggles, sliders, textboxes, dropdowns
-      * The main Window itself
-
-    Transitions:
-      * Smooth hover enter / leave color transitions
-      * Tactile click press / release (compresses bottom lip)
-      * Seamless symmetrical window open / close
-      * Smooth tab vertical slide transition
+    Design:
+      * Layouts separated cleanly by distinct color values (no 1px barrier divider lines)
+      * Topbar, Bottombar, Tab bar (sidebar), and all UI elements have solid bottom shadow lips
+      * Selecting a tab highlights it white with dark text and updates the top-left title to the current tab
+      * Tactile 2px downward button press animation compressing into bottom lip
+      * Smooth symmetrical window open/close and tab transitions
 ]]
 
 -- =============================================================================
@@ -27,7 +21,6 @@ local TweenService     = game:GetService("TweenService")
 local RunService       = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
-local Mouse       = LocalPlayer:GetMouse()
 
 -- =============================================================================
 --  ANIMATIONS DEPENDENCY
@@ -117,89 +110,80 @@ if not _ok then
 end
 
 -- =============================================================================
---  THEME ENGINE
+--  THEME ENGINE (Separated by Distinct Color Values, No 1px Barrier Lines)
 -- =============================================================================
 local Themes = {
     Dark = {
-        Window       = Color3.fromRGB(34,  34,  40),
-        WindowLip    = Color3.fromRGB(20,  20,  24),
-        Topbar       = Color3.fromRGB(26,  26,  31),
-        TopbarLip    = Color3.fromRGB(16,  16,  20),
-        TopbarAccent = Color3.fromRGB(100, 180, 240),
-        Sidebar      = Color3.fromRGB(28,  28,  34),
-        TabNormal    = Color3.fromRGB(40,  40,  48),
-        TabLip       = Color3.fromRGB(24,  24,  30),
-        TabHover     = Color3.fromRGB(52,  52,  64),
-        TabSelected  = Color3.fromRGB(56,  96,  156),
-        TabSelLip    = Color3.fromRGB(34,  60,  100),
-        Content      = Color3.fromRGB(30,  30,  36),
-        BottomBar    = Color3.fromRGB(24,  24,  29),
-        BottomLip    = Color3.fromRGB(14,  14,  18),
-        BottomBtn    = Color3.fromRGB(42,  42,  52),
-        BottomBtnLip = Color3.fromRGB(26,  26,  32),
+        Window       = Color3.fromRGB(24,  24,  30),
+        WindowLip    = Color3.fromRGB(14,  14,  18),
+        Topbar       = Color3.fromRGB(30,  30,  38),
+        TopbarLip    = Color3.fromRGB(18,  18,  24),
+        Sidebar      = Color3.fromRGB(35,  35,  44),
+        SidebarLip   = Color3.fromRGB(20,  20,  26),
+        Content      = Color3.fromRGB(42,  42,  52),
+        BottomBar    = Color3.fromRGB(28,  28,  36),
+        BottomLip    = Color3.fromRGB(16,  16,  22),
+        TabNormal    = Color3.fromRGB(48,  48,  60),
+        TabLip       = Color3.fromRGB(30,  30,  38),
+        TabHover     = Color3.fromRGB(60,  60,  74),
+        BottomBtn    = Color3.fromRGB(44,  44,  56),
+        BottomBtnLip = Color3.fromRGB(26,  26,  34),
         BottomBtnHov = Color3.fromRGB(58,  58,  72),
-        Text         = Color3.fromRGB(220, 220, 230),
-        TextDim      = Color3.fromRGB(130, 130, 145),
+        Text         = Color3.fromRGB(230, 230, 240),
+        TextDim      = Color3.fromRGB(140, 140, 155),
         Accent       = Color3.fromRGB(100, 180, 240),
-        Border       = Color3.fromRGB(50,  50,  62),
-        ScrollBar    = Color3.fromRGB(60,  60,  75),
-        Element      = Color3.fromRGB(42,  42,  50),
-        ElementLip   = Color3.fromRGB(25,  25,  32),
-        ElementHov   = Color3.fromRGB(56,  56,  68),
+        ScrollBar    = Color3.fromRGB(65,  65,  80),
+        Element      = Color3.fromRGB(52,  52,  64),
+        ElementLip   = Color3.fromRGB(32,  32,  40),
+        ElementHov   = Color3.fromRGB(66,  66,  82),
     },
     Light = {
-        Window       = Color3.fromRGB(238, 238, 244),
-        WindowLip    = Color3.fromRGB(195, 195, 205),
-        Topbar       = Color3.fromRGB(224, 225, 234),
-        TopbarLip    = Color3.fromRGB(185, 186, 196),
-        TopbarAccent = Color3.fromRGB(60,  120, 210),
-        Sidebar      = Color3.fromRGB(228, 229, 238),
-        TabNormal    = Color3.fromRGB(210, 212, 222),
-        TabLip       = Color3.fromRGB(175, 177, 188),
-        TabHover     = Color3.fromRGB(195, 198, 210),
-        TabSelected  = Color3.fromRGB(80,  140, 220),
-        TabSelLip    = Color3.fromRGB(50,  100, 170),
-        Content      = Color3.fromRGB(244, 244, 250),
-        BottomBar    = Color3.fromRGB(218, 219, 228),
-        BottomLip    = Color3.fromRGB(180, 181, 192),
+        Window       = Color3.fromRGB(224, 225, 235),
+        WindowLip    = Color3.fromRGB(185, 186, 198),
+        Topbar       = Color3.fromRGB(216, 218, 228),
+        TopbarLip    = Color3.fromRGB(178, 180, 192),
+        Sidebar      = Color3.fromRGB(226, 228, 238),
+        SidebarLip   = Color3.fromRGB(186, 188, 200),
+        Content      = Color3.fromRGB(242, 243, 250),
+        BottomBar    = Color3.fromRGB(216, 218, 228),
+        BottomLip    = Color3.fromRGB(178, 180, 192),
+        TabNormal    = Color3.fromRGB(205, 207, 218),
+        TabLip       = Color3.fromRGB(170, 172, 184),
+        TabHover     = Color3.fromRGB(192, 195, 208),
         BottomBtn    = Color3.fromRGB(202, 204, 216),
         BottomBtnLip = Color3.fromRGB(168, 170, 182),
         BottomBtnHov = Color3.fromRGB(185, 188, 202),
         Text         = Color3.fromRGB(30,  30,  42),
         TextDim      = Color3.fromRGB(110, 110, 130),
         Accent       = Color3.fromRGB(60,  120, 210),
-        Border       = Color3.fromRGB(185, 187, 200),
         ScrollBar    = Color3.fromRGB(165, 167, 180),
-        Element      = Color3.fromRGB(215, 216, 226),
-        ElementLip   = Color3.fromRGB(178, 180, 192),
-        ElementHov   = Color3.fromRGB(198, 200, 212),
+        Element      = Color3.fromRGB(218, 220, 230),
+        ElementLip   = Color3.fromRGB(180, 182, 194),
+        ElementHov   = Color3.fromRGB(200, 202, 214),
     },
     Midnight = {
-        Window       = Color3.fromRGB(12,  12,  18),
-        WindowLip    = Color3.fromRGB(6,   6,   10),
-        Topbar       = Color3.fromRGB(8,   8,   13),
-        TopbarLip    = Color3.fromRGB(4,   4,   7),
-        TopbarAccent = Color3.fromRGB(140, 75,  245),
-        Sidebar      = Color3.fromRGB(10,  10,  15),
-        TabNormal    = Color3.fromRGB(20,  18,  30),
-        TabLip       = Color3.fromRGB(11,  10,  18),
-        TabHover     = Color3.fromRGB(32,  26,  50),
-        TabSelected  = Color3.fromRGB(80,  40,  165),
-        TabSelLip    = Color3.fromRGB(48,  20,  110),
-        Content      = Color3.fromRGB(14,  13,  22),
-        BottomBar    = Color3.fromRGB(8,   7,   14),
-        BottomLip    = Color3.fromRGB(4,   3,   8),
-        BottomBtn    = Color3.fromRGB(24,  20,  40),
-        BottomBtnLip = Color3.fromRGB(13,  10,  24),
-        BottomBtnHov = Color3.fromRGB(38,  30,  64),
-        Text         = Color3.fromRGB(205, 190, 255),
-        TextDim      = Color3.fromRGB(115, 105, 160),
+        Window       = Color3.fromRGB(10,  10,  15),
+        WindowLip    = Color3.fromRGB(5,   5,   8),
+        Topbar       = Color3.fromRGB(13,  12,  20),
+        TopbarLip    = Color3.fromRGB(7,   6,   11),
+        Sidebar      = Color3.fromRGB(17,  16,  26),
+        SidebarLip   = Color3.fromRGB(9,   8,   14),
+        Content      = Color3.fromRGB(22,  21,  33),
+        BottomBar    = Color3.fromRGB(13,  12,  20),
+        BottomLip    = Color3.fromRGB(7,   6,   11),
+        TabNormal    = Color3.fromRGB(26,  24,  38),
+        TabLip       = Color3.fromRGB(14,  13,  22),
+        TabHover     = Color3.fromRGB(38,  34,  56),
+        BottomBtn    = Color3.fromRGB(26,  24,  40),
+        BottomBtnLip = Color3.fromRGB(14,  12,  23),
+        BottomBtnHov = Color3.fromRGB(40,  36,  62),
+        Text         = Color3.fromRGB(210, 195, 255),
+        TextDim      = Color3.fromRGB(120, 110, 165),
         Accent       = Color3.fromRGB(140, 75,  245),
-        Border       = Color3.fromRGB(38,  32,  60),
         ScrollBar    = Color3.fromRGB(55,  46,  90),
-        Element      = Color3.fromRGB(24,  20,  38),
-        ElementLip   = Color3.fromRGB(13,  10,  22),
-        ElementHov   = Color3.fromRGB(36,  30,  58),
+        Element      = Color3.fromRGB(28,  26,  42),
+        ElementLip   = Color3.fromRGB(15,  14,  24),
+        ElementHov   = Color3.fromRGB(42,  38,  62),
     },
 }
 
@@ -235,11 +219,7 @@ end
 
 --[[
     MakeBezelBox
-    Creates a container with a full-width bottom shadow lip.
-    Structure:
-      Container (ClipsDescendants=true)
-      |-- ShadowLip (spans full width at bottom)
-      \-- Body (sits above lip, moves straight down on press)
+    Container with a full-width bottom shadow lip.
 ]]
 local function MakeBezelBox(parent, size, pos, mainColor, lipColor)
     lipColor = lipColor or Darken(mainColor, 0.60)
@@ -275,15 +255,14 @@ end
 
 --[[
     MakeBezelButton
-    Same as MakeBezelBox but the surface is a clickable TextButton.
-    Auto-wires smooth hover transition and tactile 2px downward press animation.
+    Clickable button with bottom shadow lip and tactile 2px downward press animation.
 ]]
 local function MakeBezelButton(parent, size, pos, mainColor, lipColor, hoverColor, text, textColor, font, textSize)
     lipColor   = lipColor   or Darken(mainColor, 0.60)
     hoverColor = hoverColor or Color3.fromRGB(
-        math.clamp(math.floor(mainColor.R*255*1.2), 0, 255),
-        math.clamp(math.floor(mainColor.G*255*1.2), 0, 255),
-        math.clamp(math.floor(mainColor.B*255*1.2), 0, 255)
+        math.clamp(math.floor(mainColor.R * 255 * 1.2), 0, 255),
+        math.clamp(math.floor(mainColor.G * 255 * 1.2), 0, 255),
+        math.clamp(math.floor(mainColor.B * 255 * 1.2), 0, 255)
     )
 
     local container = Make("Frame", {
@@ -317,7 +296,6 @@ local function MakeBezelButton(parent, size, pos, mainColor, lipColor, hoverColo
         ZIndex           = container.ZIndex + 2,
     }, container)
 
-    -- Hover and tactile press/release animations
     Animations:HoverEffect(btn, hoverColor, mainColor)
     Animations:PressEffect(btn, btn, 2)
 
@@ -376,14 +354,13 @@ KeybindSystem:Init()
 local Tab = {}
 Tab.__index = Tab
 
-function Tab:_build(sidebar, contentHolder, theme, anims)
+function Tab:_build(sidebarScroll, contentHolder, theme, anims)
     self._theme   = theme
     self._anims   = anims
 
-    -- Tab button container with bottom shadow lip
     local slotSize = UDim2.new(1, 0, 0, TAB_H)
     local _, btn, lip = MakeBezelButton(
-        sidebar,
+        sidebarScroll,
         slotSize,
         nil,
         theme.TabNormal,
@@ -398,15 +375,17 @@ function Tab:_build(sidebar, contentHolder, theme, anims)
     self._btn = btn
     self._lip = lip
 
-    -- Left accent strip indicator (shown when selected)
-    self._accent = Make("Frame", {
-        Size             = UDim2.new(0, 2, 1, 0),
-        Position         = UDim2.new(0, 0, 0, 0),
-        BackgroundColor3 = theme.Accent,
-        BorderSizePixel  = 0,
-        Visible          = false,
-        ZIndex           = btn.ZIndex + 1,
-    }, btn)
+    -- Hover behavior respecting active selection
+    btn.MouseEnter:Connect(function()
+        if not self._selected then
+            anims:Tween(btn, {BackgroundColor3 = self._theme.TabHover}, 0.12)
+        end
+    end)
+    btn.MouseLeave:Connect(function()
+        if not self._selected then
+            anims:Tween(btn, {BackgroundColor3 = self._theme.TabNormal}, 0.12)
+        end
+    end)
 
     btn.MouseButton1Click:Connect(function()
         if self._window then self._window:_selectTab(self) end
@@ -442,13 +421,22 @@ end
 function Tab:_select(state, theme)
     self._selected = state
     if state then
-        self._anims:Tween(self._btn, {BackgroundColor3 = theme.TabSelected, TextColor3 = theme.Text}, 0.14)
-        self._anims:Tween(self._lip, {BackgroundColor3 = theme.TabSelLip}, 0.14)
-        self._accent.Visible = true
+        -- Highlight solid white with readable dark text and soft light shadow lip
+        self._anims:Tween(self._btn, {
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            TextColor3       = Color3.fromRGB(20, 20, 26),
+        }, 0.14)
+        self._anims:Tween(self._lip, {
+            BackgroundColor3 = Color3.fromRGB(195, 195, 205),
+        }, 0.14)
     else
-        self._anims:Tween(self._btn, {BackgroundColor3 = theme.TabNormal, TextColor3 = theme.TextDim}, 0.12)
-        self._anims:Tween(self._lip, {BackgroundColor3 = theme.TabLip}, 0.12)
-        self._accent.Visible = false
+        self._anims:Tween(self._btn, {
+            BackgroundColor3 = theme.TabNormal,
+            TextColor3       = theme.TextDim,
+        }, 0.12)
+        self._anims:Tween(self._lip, {
+            BackgroundColor3 = theme.TabLip,
+        }, 0.12)
     end
 end
 
@@ -478,7 +466,7 @@ function Tab:AddSeparator()
     Make("Frame", {
         Size             = UDim2.new(1, 0, 0, 1),
         Position         = UDim2.new(0, 0, 0, 0),
-        BackgroundColor3 = self._theme.Border,
+        BackgroundColor3 = self._theme.ElementHov,
         BorderSizePixel  = 0,
     }, sep)
     Make("Frame", {
@@ -533,19 +521,17 @@ function Tab:AddToggle(text, default, callback)
         ZIndex           = row.ZIndex + 1,
     }, row)
 
-    -- Toggle track with bottom lip
     local trackW, trackH = 34, 16
     local trackContainer, trackBody, _ = MakeBezelBox(
         row,
         UDim2.new(0, trackW, 0, trackH),
         UDim2.new(1, -(trackW + 10), 0.5, -trackH / 2),
-        self._theme.Border,
+        self._theme.TabNormal,
         self._theme.ElementLip
     )
     trackContainer.ZIndex = row.ZIndex + 2
     trackBody.ZIndex      = row.ZIndex + 3
 
-    -- Square knob
     local knobSz = trackH - LIP_H - 2
     local knob = Make("Frame", {
         Size             = UDim2.new(0, knobSz, 0, knobSz),
@@ -563,7 +549,7 @@ function Tab:AddToggle(text, default, callback)
             BackgroundColor3 = v and self._theme.Accent or self._theme.TextDim,
         }, 0.14)
         self._anims:Tween(trackBody, {
-            BackgroundColor3 = v and Darken(self._theme.Accent, 0.40) or self._theme.Border,
+            BackgroundColor3 = v and Darken(self._theme.Accent, 0.40) or self._theme.TabNormal,
         }, 0.14)
         if callback then task.spawn(callback, state) end
     end
@@ -620,13 +606,12 @@ function Tab:AddSlider(text, min, max, default, callback)
         ZIndex           = surface.ZIndex + 1,
     }, surface)
 
-    -- Slider track with bottom shadow lip
     local trackH = 8
     local _, trackBody, _ = MakeBezelBox(
         surface,
         UDim2.new(1, -20, 0, trackH),
         UDim2.new(0, 10, 0, 26),
-        self._theme.Border,
+        self._theme.TabNormal,
         self._theme.ElementLip
     )
 
@@ -764,13 +749,12 @@ function Tab:AddDropdown(text, options, default, callback)
         ZIndex           = mainBtn.ZIndex + 1,
     }, mainBtn)
 
-    -- Option list container with bottom shadow lip
     local listH = #options * ITEM_H + LIP_H
     local listContainer, listBody, _ = MakeBezelBox(
         dropWrap,
         UDim2.new(1, 0, 0, listH),
         UDim2.new(0, 0, 0, ELEM_H + 2),
-        self._theme.Border,
+        self._theme.Sidebar,
         self._theme.ElementLip
     )
     listContainer.Visible = false
@@ -830,7 +814,7 @@ function Window:_build()
     local ok2 = pcall(function() sg.Parent = game:GetService("CoreGui") end)
     if not ok2 then sg.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
-    -- ---- Main Window (with bottom shadow lip) --------------------------------
+    -- ---- Main Window (pure color surfaces, no 1px outline barriers) ----------
     local win = Make("Frame", {
         Name             = "Window",
         Size             = self.Size,
@@ -843,7 +827,7 @@ function Window:_build()
     }, sg)
 
     -- Window bottom shadow lip
-    Make("Frame", {
+    local winLip = Make("Frame", {
         Name             = "WindowShadowLip",
         Size             = UDim2.new(1, 0, 0, 4),
         Position         = UDim2.new(0, 0, 1, -4),
@@ -852,17 +836,11 @@ function Window:_build()
         ZIndex           = 25,
     }, win)
 
-    -- Window 1px outline border
-    local function B(s, p) Make("Frame", {Size=s, Position=p, BackgroundColor3=T.Border, BorderSizePixel=0, ZIndex=26}, win) end
-    B(UDim2.new(1, 0, 0, 1), UDim2.new(0, 0, 0, 0))   -- top
-    B(UDim2.new(1, 0, 0, 1), UDim2.new(0, 0, 1, -1))  -- bottom
-    B(UDim2.new(0, 1, 1, 0), UDim2.new(0, 0, 0, 0))   -- left
-    B(UDim2.new(0, 1, 1, 0), UDim2.new(1, -1, 0, 0))  -- right
+    self._sg     = sg
+    self._win    = win
+    self._winLip = winLip
 
-    self._sg  = sg
-    self._win = win
-
-    -- ---- Topbar (with bottom shadow lip) -------------------------------------
+    -- ---- Topbar (distinct color value + bottom shadow lip) -------------------
     local topbar = Make("Frame", {
         Name             = "Topbar",
         Size             = UDim2.new(1, 0, 0, TOPBAR_H),
@@ -873,7 +851,7 @@ function Window:_build()
     }, win)
 
     -- Topbar bottom shadow lip
-    Make("Frame", {
+    local topbarLip = Make("Frame", {
         Name             = "TopbarLip",
         Size             = UDim2.new(1, 0, 0, LIP_H),
         Position         = UDim2.new(0, 0, 1, -LIP_H),
@@ -882,19 +860,11 @@ function Window:_build()
         ZIndex           = 3,
     }, topbar)
 
-    -- Topbar accent strip
-    Make("Frame", {
-        Size             = UDim2.new(1, 0, 0, 1),
-        Position         = UDim2.new(0, 0, 1, -LIP_H - 1),
-        BackgroundColor3 = T.TopbarAccent,
-        BorderSizePixel  = 0,
-        ZIndex           = 3,
-    }, topbar)
-
-    -- Title
-    Make("TextLabel", {
+    -- Top-left title label (dynamically updates to current tab)
+    local titleLabel = Make("TextLabel", {
+        Name             = "TitleLabel",
         Size             = UDim2.new(1, -90, 1, -LIP_H),
-        Position         = UDim2.new(0, 10, 0, 0),
+        Position         = UDim2.new(0, 12, 0, 0),
         BackgroundTransparency = 1,
         Text             = self.Title,
         TextColor3       = T.Text,
@@ -945,50 +915,65 @@ function Window:_build()
 
     MakeDraggable(win, topbar)
 
-    -- ---- Sidebar (Tab list) --------------------------------------------------
+    -- ---- Sidebar / Tab Bar (distinct color value + bottom shadow lip) --------
     local sidebar = Make("Frame", {
         Name             = "Sidebar",
         Size             = UDim2.new(0, SIDEBAR_W, 1, -(TOPBAR_H + BOTTOMBAR_H)),
-        Position         = UDim2.new(0, 1, 0, TOPBAR_H),
+        Position         = UDim2.new(0, 0, 0, TOPBAR_H),
         BackgroundColor3 = T.Sidebar,
         BorderSizePixel  = 0,
         ClipsDescendants = true,
         ZIndex           = 2,
     }, win)
 
+    -- Scrolling container for tabs (leaving room for bottom lip)
+    local sidebarScroll = Make("ScrollingFrame", {
+        Name                 = "TabList",
+        Size                 = UDim2.new(1, 0, 1, -LIP_H),
+        Position             = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel      = 0,
+        ScrollBarThickness   = 2,
+        ScrollBarImageColor3 = T.ScrollBar,
+        AutomaticCanvasSize  = Enum.AutomaticSize.Y,
+        CanvasSize           = UDim2.new(0, 0, 0, 0),
+        ZIndex               = 3,
+    }, sidebar)
+
     Make("UIListLayout", {
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding   = UDim.new(0, TAB_GAP),
-    }, sidebar)
+    }, sidebarScroll)
 
     Make("UIPadding", {
-        PaddingTop   = UDim.new(0, 6),
-        PaddingLeft  = UDim.new(0, 5),
-        PaddingRight = UDim.new(0, 5),
+        PaddingTop    = UDim.new(0, 6),
+        PaddingLeft   = UDim.new(0, 6),
+        PaddingRight  = UDim.new(0, 6),
+        PaddingBottom = UDim.new(0, 6),
+    }, sidebarScroll)
+
+    -- Bottom of tab bar shadow lip
+    local sidebarLip = Make("Frame", {
+        Name             = "SidebarShadowLip",
+        Size             = UDim2.new(1, 0, 0, LIP_H),
+        Position         = UDim2.new(0, 0, 1, -LIP_H),
+        BackgroundColor3 = T.SidebarLip,
+        BorderSizePixel  = 0,
+        ZIndex           = 4,
     }, sidebar)
 
-    -- 1px divider between sidebar and content
-    Make("Frame", {
-        Size             = UDim2.new(0, 1, 1, -(TOPBAR_H + BOTTOMBAR_H)),
-        Position         = UDim2.new(0, SIDEBAR_W + 1, 0, TOPBAR_H),
-        BackgroundColor3 = T.Border,
-        BorderSizePixel  = 0,
-        ZIndex           = 2,
-    }, win)
-
-    -- ---- Content Area --------------------------------------------------------
-    local contentX = SIDEBAR_W + 2
+    -- ---- Content Area (distinct color value, no barrier lines) ---------------
     local contentHolder = Make("Frame", {
         Name             = "ContentHolder",
-        Size             = UDim2.new(1, -contentX - 1, 1, -(TOPBAR_H + BOTTOMBAR_H)),
-        Position         = UDim2.new(0, contentX, 0, TOPBAR_H),
+        Size             = UDim2.new(1, -SIDEBAR_W, 1, -(TOPBAR_H + BOTTOMBAR_H)),
+        Position         = UDim2.new(0, SIDEBAR_W, 0, TOPBAR_H),
         BackgroundColor3 = T.Content,
         BorderSizePixel  = 0,
         ClipsDescendants = true,
         ZIndex           = 2,
     }, win)
 
-    -- ---- Bottombar (with bottom shadow lip) ----------------------------------
+    -- ---- Bottombar (distinct color value + bottom shadow lip) ----------------
     local bottomBar = Make("Frame", {
         Name             = "BottomBar",
         Size             = UDim2.new(1, 0, 0, BOTTOMBAR_H),
@@ -998,17 +983,8 @@ function Window:_build()
         ZIndex           = 2,
     }, win)
 
-    -- Bottombar top line
-    Make("Frame", {
-        Size             = UDim2.new(1, 0, 0, 1),
-        Position         = UDim2.new(0, 0, 0, 0),
-        BackgroundColor3 = T.Border,
-        BorderSizePixel  = 0,
-        ZIndex           = 3,
-    }, bottomBar)
-
     -- Bottombar shadow lip
-    Make("Frame", {
+    local bottomLip = Make("Frame", {
         Name             = "BottomLip",
         Size             = UDim2.new(1, 0, 0, LIP_H),
         Position         = UDim2.new(0, 0, 1, -LIP_H),
@@ -1041,16 +1017,22 @@ function Window:_build()
     BottomBtn("Keybinds", -(btnW * 2 + 8),  function() self:_openOverlay("Keybinds") end)
     BottomBtn("Settings", -(btnW * 1 + 4),  function() self:_openOverlay("Settings") end)
 
+    self._topbar        = topbar
+    self._topbarLip     = topbarLip
+    self._titleLabel    = titleLabel
     self._sidebar       = sidebar
+    self._sidebarScroll = sidebarScroll
+    self._sidebarLip    = sidebarLip
     self._contentHolder = contentHolder
     self._bottomBar     = bottomBar
+    self._bottomLip     = bottomLip
     self._tabs          = {}
     self._activeTab     = nil
 
     -- ---- Overlay Panel (Themes, Keybinds, Settings) --------------------------
     self._overlay = Make("Frame", {
-        Size             = UDim2.new(1, -contentX - 1, 1, -(TOPBAR_H + BOTTOMBAR_H)),
-        Position         = UDim2.new(0, contentX, 0, TOPBAR_H),
+        Size             = UDim2.new(1, -SIDEBAR_W, 1, -(TOPBAR_H + BOTTOMBAR_H)),
+        Position         = UDim2.new(0, SIDEBAR_W, 0, TOPBAR_H),
         BackgroundColor3 = T.Topbar,
         BorderSizePixel  = 0,
         Visible          = false,
@@ -1058,7 +1040,6 @@ function Window:_build()
         ZIndex           = 15,
     }, win)
 
-    -- Overlay close [X]
     local _, ovClose, _ = MakeBezelButton(
         self._overlay,
         UDim2.new(0, 22, 0, 18),
@@ -1186,6 +1167,12 @@ function Window:_selectTab(tab)
         t:_select(t == tab, self._theme)
     end
     self._activeTab = tab
+
+    -- Update the top-left title to the current selected tab
+    if self._titleLabel then
+        self._titleLabel.Text = tab.Name
+    end
+
     Animations:SwitchTab(oldFrame, tab._frame, 0.16)
 end
 
@@ -1194,7 +1181,7 @@ end
 -- =============================================================================
 function Window:AddTab(name, icon)
     local tab = setmetatable({Name = name, Icon = icon or "", _window = self}, Tab)
-    tab:_build(self._sidebar, self._contentHolder, self._theme, Animations)
+    tab:_build(self._sidebarScroll, self._contentHolder, self._theme, Animations)
     table.insert(self._tabs, tab)
     if #self._tabs == 1 then self:_selectTab(tab) end
     return tab
@@ -1204,10 +1191,17 @@ function Window:ApplyTheme(name)
     local t = Themes[name]
     if not t then warn("Theme '"..name.."' not found.") return end
     self._theme = t
+
     Animations:Tween(self._win,           {BackgroundColor3 = t.Window})
+    Animations:Tween(self._winLip,        {BackgroundColor3 = t.WindowLip})
+    Animations:Tween(self._topbar,        {BackgroundColor3 = t.Topbar})
+    Animations:Tween(self._topbarLip,     {BackgroundColor3 = t.TopbarLip})
     Animations:Tween(self._sidebar,       {BackgroundColor3 = t.Sidebar})
+    Animations:Tween(self._sidebarLip,    {BackgroundColor3 = t.SidebarLip})
     Animations:Tween(self._contentHolder, {BackgroundColor3 = t.Content})
     Animations:Tween(self._bottomBar,     {BackgroundColor3 = t.BottomBar})
+    Animations:Tween(self._bottomLip,     {BackgroundColor3 = t.BottomLip})
+
     for _, tab in ipairs(self._tabs) do
         tab:_select(tab == self._activeTab, t)
     end

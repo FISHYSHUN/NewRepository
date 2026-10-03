@@ -4,107 +4,66 @@
          loadstring(game:HttpGet(URL))()
     =====================================================
 
-    Usage:
-        local Anim = loadstring(game:HttpGet("RAW_URL_HERE"))()
-        Anim:Tween(frame, {Size = UDim2.new(...)}, 0.3)
+    Simple, clean transition animations only.
+    No flashy effects -- just subtle, fast tweens.
+
+    All durations are short (0.1 - 0.25s).
+    EasingStyle: Quart (smooth) or Quad (snappy).
 ]]
 
-local TweenService = game:GetService("TweenService")
-local RunService   = game:GetService("RunService")
+local TweenService     = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local Animations = {}
 Animations.__index = Animations
 
--- -- Default easing ----------------------------------------------------------
-local DEFAULT_INFO = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+-- =============================================================================
+--  CONSTANTS
+-- =============================================================================
+local FAST   = 0.12   -- hover, press, release
+local NORMAL = 0.20   -- fade, tab switch
+local OPEN   = 0.25   -- window open
+local CLOSE  = 0.18   -- window close
 
--- -- Core Tween --------------------------------------------------------------
-function Animations:Tween(instance, props, duration, style, direction)
-    local info = TweenInfo.new(
-        duration  or 0.25,
-        style     or Enum.EasingStyle.Quart,
-        direction or Enum.EasingDirection.Out
+local function Info(dur, style, dir)
+    return TweenInfo.new(
+        dur   or NORMAL,
+        style or Enum.EasingStyle.Quart,
+        dir   or Enum.EasingDirection.Out
     )
-    local t = TweenService:Create(instance, info, props)
+end
+
+-- =============================================================================
+--  CORE TWEEN
+-- =============================================================================
+
+-- Base tween -- returns the Tween object
+function Animations:Tween(instance, props, duration, style, direction)
+    local t = TweenService:Create(instance, Info(duration, style, direction), props)
     t:Play()
     return t
 end
 
--- -- Fade In ------------------------------------------------------------------
-function Animations:FadeIn(instance, duration)
-    instance.BackgroundTransparency = 1
-    instance.Visible = true
-    return self:Tween(instance, {BackgroundTransparency = 0}, duration or 0.2)
+-- =============================================================================
+--  HOVER ANIMATIONS
+-- =============================================================================
+
+-- Call on MouseEnter -- shifts background to hoverColor
+function Animations:HoverEnter(instance, hoverColor)
+    self:Tween(instance, {BackgroundColor3 = hoverColor}, FAST)
 end
 
--- -- Fade Out -----------------------------------------------------------------
-function Animations:FadeOut(instance, duration, callback)
-    local t = self:Tween(instance, {BackgroundTransparency = 1}, duration or 0.2)
-    t.Completed:Connect(function()
-        instance.Visible = false
-        if callback then callback() end
-    end)
-    return t
+-- Call on MouseLeave -- restores background to normalColor
+function Animations:HoverLeave(instance, normalColor)
+    self:Tween(instance, {BackgroundColor3 = normalColor}, FAST)
 end
 
--- -- Slide In (from direction) -------------------------------------------------
--- direction: "left" | "right" | "top" | "bottom"
-function Animations:SlideIn(instance, direction, duration)
-    local orig = instance.Position
-    local offX, offY = 0, 0
-    if direction == "left"   then offX = -instance.AbsoluteSize.X - 10 end
-    if direction == "right"  then offX =  instance.AbsoluteSize.X + 10 end
-    if direction == "top"    then offY = -instance.AbsoluteSize.Y - 10 end
-    if direction == "bottom" then offY =  instance.AbsoluteSize.Y + 10 end
-
-    instance.Position = UDim2.new(
-        orig.X.Scale, orig.X.Offset + offX,
-        orig.Y.Scale, orig.Y.Offset + offY
-    )
-    instance.Visible = true
-    return self:Tween(instance, {Position = orig}, duration or 0.3)
-end
-
--- -- Slide Out -----------------------------------------------------------------
-function Animations:SlideOut(instance, direction, duration, callback)
-    local orig = instance.Position
-    local offX, offY = 0, 0
-    if direction == "left"   then offX = -instance.AbsoluteSize.X - 10 end
-    if direction == "right"  then offX =  instance.AbsoluteSize.X + 10 end
-    if direction == "top"    then offY = -instance.AbsoluteSize.Y - 10 end
-    if direction == "bottom" then offY =  instance.AbsoluteSize.Y + 10 end
-
-    local target = UDim2.new(
-        orig.X.Scale, orig.X.Offset + offX,
-        orig.Y.Scale, orig.Y.Offset + offY
-    )
-    local t = self:Tween(instance, {Position = target}, duration or 0.3)
-    t.Completed:Connect(function()
-        instance.Visible = false
-        instance.Position = orig
-        if callback then callback() end
-    end)
-    return t
-end
-
--- -- Scale Bounce --------------------------------------------------------------
-function Animations:Bounce(instance, duration)
-    local orig = instance.Size
-    local big  = UDim2.new(
-        orig.X.Scale * 1.08, orig.X.Offset,
-        orig.Y.Scale * 1.08, orig.Y.Offset
-    )
-    self:Tween(instance, {Size = big}, (duration or 0.15) / 2,
-        Enum.EasingStyle.Quad, Enum.EasingDirection.Out).Completed:Connect(function()
-        self:Tween(instance, {Size = orig}, (duration or 0.15) / 2,
-            Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-    end)
-end
-
--- -- Hover Highlight -----------------------------------------------------------
+-- Auto-wires MouseEnter + MouseLeave on an instance
+-- normalColor defaults to instance.BackgroundColor3 at call time
 function Animations:HoverEffect(instance, hoverColor, normalColor, duration)
     normalColor = normalColor or instance.BackgroundColor3
-    duration    = duration or 0.15
+    duration    = duration    or FAST
+
     instance.MouseEnter:Connect(function()
         self:Tween(instance, {BackgroundColor3 = hoverColor}, duration)
     end)
@@ -113,67 +72,233 @@ function Animations:HoverEffect(instance, hoverColor, normalColor, duration)
     end)
 end
 
--- -- Tab Switch ----------------------------------------------------------------
-function Animations:SwitchTab(oldFrame, newFrame, duration)
-    if oldFrame == newFrame then return end
-    duration = duration or 0.18
-    self:FadeOut(oldFrame, duration, function()
-        self:FadeIn(newFrame, duration)
+-- TextColor hover variant (for labels / text buttons)
+function Animations:HoverTextColor(instance, hoverColor, normalColor)
+    normalColor = normalColor or instance.TextColor3
+    instance.MouseEnter:Connect(function()
+        self:Tween(instance, {TextColor3 = hoverColor}, FAST)
+    end)
+    instance.MouseLeave:Connect(function()
+        self:Tween(instance, {TextColor3 = normalColor}, FAST)
     end)
 end
 
--- -- Window Open / Close -------------------------------------------------------
-function Animations:OpenWindow(windowFrame, duration)
-    windowFrame.Size = UDim2.new(0, 0, 0, 0)
-    windowFrame.Visible = true
-    local target = windowFrame:GetAttribute("OriginalSize") or windowFrame.Size
-    self:Tween(windowFrame, {Size = target}, duration or 0.3,
-        Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+-- =============================================================================
+--  PRESS / RELEASE  (physical button feel)
+-- =============================================================================
+-- Shifts a surface frame slightly toward its shadow (down+right by `offset` px)
+-- giving the illusion the button is being depressed.
+-- Call Press on InputBegan, Release on InputEnded.
+
+function Animations:Press(surface, offset)
+    offset = offset or 2
+    self:Tween(surface, {
+        Position = UDim2.new(0, offset, 0, offset),
+    }, FAST, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 end
 
-function Animations:CloseWindow(windowFrame, duration, callback)
-    local t = self:Tween(windowFrame, {Size = UDim2.new(0,0,0,0)}, duration or 0.25,
-        Enum.EasingStyle.Back, Enum.EasingDirection.In)
-    t.Completed:Connect(function()
-        windowFrame.Visible = false
-        if callback then callback() end
+function Animations:Release(surface)
+    self:Tween(surface, {
+        Position = UDim2.new(0, 0, 0, 0),
+    }, FAST, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+end
+
+-- Auto-wires InputBegan / InputEnded press animation on a TextButton surface
+-- `surface` is the Frame that moves; `trigger` is the TextButton receiving input
+-- (they may be the same object or different)
+function Animations:PressEffect(trigger, surface, offset)
+    surface = surface or trigger
+    offset  = offset  or 2
+    trigger.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            self:Press(surface, offset)
+        end
+    end)
+    trigger.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            self:Release(surface)
+        end
+    end)
+    -- Also release if mouse leaves while held
+    trigger.MouseLeave:Connect(function()
+        self:Release(surface)
+    end)
+end
+
+-- =============================================================================
+--  FADE IN / OUT
+-- =============================================================================
+
+-- Fade an instance in from fully transparent to fully opaque
+function Animations:FadeIn(instance, duration)
+    instance.BackgroundTransparency = 1
+    instance.Visible = true
+    return self:Tween(instance, {BackgroundTransparency = 0}, duration or NORMAL)
+end
+
+-- Fade an instance out, then hide it. Optional callback when done.
+function Animations:FadeOut(instance, duration, callback)
+    local t = self:Tween(instance, {BackgroundTransparency = 1}, duration or NORMAL)
+    t.Completed:Connect(function(state)
+        if state == Enum.PlaybackState.Completed then
+            instance.Visible = false
+            if callback then callback() end
+        end
     end)
     return t
 end
 
--- -- Typewriter text -----------------------------------------------------------
-function Animations:Typewriter(label, text, speed)
-    speed = speed or 0.04
-    label.Text = ""
-    task.spawn(function()
-        for i = 1, #text do
-            label.Text = string.sub(text, 1, i)
-            task.wait(speed)
+-- =============================================================================
+--  TAB SWITCH
+-- =============================================================================
+-- Cross-fades between two content frames.
+-- Fades old out, then fades new in.
+function Animations:SwitchTab(oldFrame, newFrame, duration)
+    if oldFrame == newFrame then return end
+    duration = duration or NORMAL
+    if oldFrame and oldFrame.Visible then
+        -- Fade old out quickly, then reveal new
+        local t = self:Tween(oldFrame, {BackgroundTransparency = 1}, duration * 0.5,
+            Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        t.Completed:Connect(function(state)
+            if state == Enum.PlaybackState.Completed then
+                oldFrame.Visible = false
+                oldFrame.BackgroundTransparency = 0
+                if newFrame then
+                    newFrame.BackgroundTransparency = 1
+                    newFrame.Visible = true
+                    self:Tween(newFrame, {BackgroundTransparency = 0}, duration * 0.5,
+                        Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                end
+            end
+        end)
+    else
+        if newFrame then
+            newFrame.BackgroundTransparency = 1
+            newFrame.Visible = true
+            self:Tween(newFrame, {BackgroundTransparency = 0}, duration,
+                Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        end
+    end
+end
+
+-- =============================================================================
+--  WINDOW OPEN / CLOSE
+-- =============================================================================
+-- Opens a window frame by scaling it from (0,0) to its target size.
+-- Stores the target size on the frame before calling.
+function Animations:OpenWindow(frame, targetSize, duration)
+    frame.Size    = UDim2.new(0, 0, 0, 0)
+    frame.Visible = true
+    return self:Tween(frame, {Size = targetSize}, duration or OPEN,
+        Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+end
+
+-- Closes a window frame by shrinking it to (0,0), then hides it.
+function Animations:CloseWindow(frame, duration, callback)
+    local t = self:Tween(frame, {Size = UDim2.new(0, 0, 0, 0)}, duration or CLOSE,
+        Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+    t.Completed:Connect(function(state)
+        if state == Enum.PlaybackState.Completed then
+            frame.Visible = false
+            if callback then callback() end
+        end
+    end)
+    return t
+end
+
+-- =============================================================================
+--  ACCENT LINE SLIDE  (topbar underline reveal)
+-- =============================================================================
+-- Slides an accent line from width 0 to full width on a frame.
+-- Used for the topbar accent reveal on window open.
+function Animations:RevealAccent(line, duration)
+    line.Size = UDim2.new(0, 0, line.Size.Y.Scale, line.Size.Y.Offset)
+    return self:Tween(line, {Size = UDim2.new(1, 0, line.Size.Y.Scale, line.Size.Y.Offset)},
+        duration or OPEN, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+end
+
+-- =============================================================================
+--  SIDEBAR TAB ACCENT  (left accent bar fade in/out)
+-- =============================================================================
+function Animations:ShowAccent(accent, theme)
+    accent.Visible = true
+    self:Tween(accent, {BackgroundTransparency = 0}, FAST)
+end
+
+function Animations:HideAccent(accent)
+    local t = self:Tween(accent, {BackgroundTransparency = 1}, FAST)
+    t.Completed:Connect(function(state)
+        if state == Enum.PlaybackState.Completed then
+            accent.Visible = false
+            accent.BackgroundTransparency = 0
         end
     end)
 end
 
--- -- Ripple effect (click feedback) -------------------------------------------
-function Animations:Ripple(parent, x, y, color)
-    color = color or Color3.fromRGB(255,255,255)
-    local ripple = Instance.new("Frame")
-    ripple.AnchorPoint  = Vector2.new(0.5, 0.5)
-    ripple.Position     = UDim2.new(0, x, 0, y)
-    ripple.Size         = UDim2.new(0, 0, 0, 0)
-    ripple.BackgroundColor3 = color
-    ripple.BackgroundTransparency = 0.6
-    ripple.ZIndex       = parent.ZIndex + 5
-    ripple.ClipsDescendants = false
-    local corner = Instance.new("UICorner", ripple)
-    corner.CornerRadius = UDim.new(1, 0)
-    ripple.Parent = parent
+-- =============================================================================
+--  OVERLAY SLIDE IN / OUT  (for Themes, Keybinds, Settings panels)
+-- =============================================================================
+-- Slides a panel in from the right edge
+function Animations:SlideInRight(frame, duration)
+    local orig = frame.Position
+    frame.Position = UDim2.new(orig.X.Scale, orig.X.Offset + frame.AbsoluteSize.X + 10,
+        orig.Y.Scale, orig.Y.Offset)
+    frame.Visible = true
+    return self:Tween(frame, {Position = orig}, duration or OPEN,
+        Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+end
 
-    local maxSize = math.max(parent.AbsoluteSize.X, parent.AbsoluteSize.Y) * 2.5
-    TweenService:Create(ripple, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        Size = UDim2.new(0, maxSize, 0, maxSize),
-        BackgroundTransparency = 1
+function Animations:SlideOutRight(frame, duration, callback)
+    local t = self:Tween(frame,
+        {Position = UDim2.new(frame.Position.X.Scale, frame.AbsoluteSize.X + 10,
+            frame.Position.Y.Scale, frame.Position.Y.Offset)},
+        duration or CLOSE, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+    t.Completed:Connect(function(state)
+        if state == Enum.PlaybackState.Completed then
+            frame.Visible = false
+            if callback then callback() end
+        end
+    end)
+    return t
+end
+
+-- =============================================================================
+--  SQUARE RIPPLE  (click feedback, no rounded corners)
+-- =============================================================================
+function Animations:Ripple(parent, x, y, color)
+    color = color or Color3.fromRGB(255, 255, 255)
+    local r = Instance.new("Frame")
+    r.AnchorPoint         = Vector2.new(0.5, 0.5)
+    r.Position            = UDim2.new(0, x, 0, y)
+    r.Size                = UDim2.new(0, 0, 0, 0)
+    r.BackgroundColor3    = color
+    r.BackgroundTransparency = 0.78
+    r.BorderSizePixel     = 0
+    r.ZIndex              = parent.ZIndex + 8
+    r.Parent              = parent
+
+    local maxS = math.max(parent.AbsoluteSize.X, parent.AbsoluteSize.Y) * 2
+    TweenService:Create(r, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size                 = UDim2.new(0, maxS, 0, maxS),
+        BackgroundTransparency = 1,
     }):Play()
-    game:GetService("Debris"):AddItem(ripple, 0.6)
+    game:GetService("Debris"):AddItem(r, 0.4)
+end
+
+-- =============================================================================
+--  COLOR PULSE  (brief flash to accent color then restore -- for feedback)
+-- =============================================================================
+function Animations:Pulse(instance, pulseColor, normalColor, duration)
+    normalColor = normalColor or instance.BackgroundColor3
+    duration    = duration    or FAST
+    self:Tween(instance, {BackgroundColor3 = pulseColor}, duration * 0.4,
+        Enum.EasingStyle.Quad, Enum.EasingDirection.Out).Completed:Connect(function(s)
+        if s == Enum.PlaybackState.Completed then
+            self:Tween(instance, {BackgroundColor3 = normalColor}, duration * 0.6,
+                Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+        end
+    end)
 end
 
 return Animations

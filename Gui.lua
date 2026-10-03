@@ -1,23 +1,25 @@
 --[[
-    ╔═══════════════════════════════════════════╗
-    ║        GUI HANDLING MODULE v1.0           ║
-    ║   Connect via: loadstring(...)()          ║
-    ╚═══════════════════════════════════════════╝
+    =====================================================
+         GUI HANDLING MODULE v1.0
+         loadstring(game:HttpGet(URL))()
+    =====================================================
 
     Features:
-      • Draggable window with topbar
-      • Left sidebar tabs system
-      • Main content frames per tab
-      • Bottom bar: Themes | Keybinds | Settings
-      • Theme engine (Dark / Light / custom)
-      • Keybind system
-      • External module plug-in via :LoadModule()
+      * Draggable window with topbar
+      * Left sidebar tabs system
+      * Main content frames per tab
+      * Bottom bar: Themes | Keybinds | Settings
+      * Theme engine (Dark / Light / Midnight / custom)
+      * Keybind system
+      * External module plug-in via :LoadModule()
 
     Usage:
-        local GUI = loadstring(game:HttpGet("RAW_URL_HERE"))()
+        local GUI = loadstring(game:HttpGet(
+            "https://raw.githubusercontent.com/FISHYSHUN/NewRepository/main/Gui.lua"
+        ))()
         local window = GUI:CreateWindow({
             Title   = "My Script",
-            Size    = UDim2.new(0, 600, 0, 400),
+            Size    = UDim2.new(0, 620, 0, 430),
             Keybind = Enum.KeyCode.RightShift,
         })
         local tab = window:AddTab("Home", "rbxassetid://...")
@@ -25,7 +27,7 @@
         window:Open()
 ]]
 
--- ── Services ─────────────────────────────────────────────────────────────────
+-- -- Services ------------------------------------------------------------------
 local Players          = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService     = game:GetService("TweenService")
@@ -35,9 +37,8 @@ local HttpService      = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 local Mouse       = LocalPlayer:GetMouse()
 
--- ── Animations Dependency ────────────────────────────────────────────────────
--- Swap this URL with your hosted AnimationsModule raw URL, or paste inline
-local ANIM_URL = "https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/AnimationsModule.lua"
+-- -- Animations Dependency -----------------------------------------------------
+local ANIM_URL = "https://raw.githubusercontent.com/FISHYSHUN/NewRepository/main/Animations.lua"
 local Animations
 local ok, err = pcall(function()
     Animations = loadstring(game:HttpGet(ANIM_URL))()
@@ -90,9 +91,9 @@ if not ok then
     end
 end
 
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 --  THEME ENGINE
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 local Themes = {
     Dark = {
         Window        = Color3.fromRGB(30,  30,  35),
@@ -150,9 +151,9 @@ local Themes = {
     },
 }
 
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 --  UTILITY
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 local function Make(class, props, parent)
     local obj = Instance.new(class)
     for k, v in pairs(props or {}) do obj[k] = v end
@@ -205,9 +206,9 @@ local function MakeDraggable(frame, handle)
     end)
 end
 
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 --  KEYBIND SYSTEM
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 local KeybindSystem = {}
 KeybindSystem._binds = {}
 
@@ -232,9 +233,9 @@ end
 
 KeybindSystem:Init()
 
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 --  TAB OBJECT
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 local Tab = {}
 Tab.__index = Tab
 
@@ -289,7 +290,7 @@ function Tab:_build(sidebar, contentHolder, theme, anims)
     }, self._btn)
     Corner(self._accent, 2)
 
-    -- Content frame
+    -- Content frame (scrollable)
     self._frame = Make("ScrollingFrame", {
         Name              = "Content_"..self.Name,
         Size              = UDim2.new(1,0,1,0),
@@ -338,7 +339,7 @@ function Tab:_select(state, theme)
     end
 end
 
--- ─── Element Builders ────────────────────────────────────────────────────────
+-- -- Element Builders ----------------------------------------------------------
 function Tab:AddLabel(text, color)
     local lbl = Make("TextLabel", {
         Size              = UDim2.new(1, 0, 0, 22),
@@ -499,7 +500,12 @@ function Tab:AddSlider(text, min, max, default, callback)
     UserInputService.InputEnded:Connect(function(i)
         if i.UserInputType==Enum.UserInputType.MouseButton1 then sliding=false end
     end)
-    return {Get=function() return val end, Set=function(v) update(track.AbsolutePosition.X+((v-min)/(max-min))*track.AbsoluteSize.X) end}
+    return {
+        Get = function() return val end,
+        Set = function(v)
+            update(track.AbsolutePosition.X+((v-min)/(max-min))*track.AbsoluteSize.X)
+        end
+    }
 end
 
 function Tab:AddTextbox(placeholder, callback)
@@ -524,7 +530,11 @@ function Tab:AddDropdown(text, options, default, callback)
     local selected = default or options[1]
     local open = false
 
-    local wrap = Make("Frame",{Size=UDim2.new(1,0,0,34),BackgroundTransparency=1,ClipsDescendants=false}, self._frame)
+    local wrap = Make("Frame",{
+        Size=UDim2.new(1,0,0,34),
+        BackgroundTransparency=1,
+        ClipsDescendants=false,
+    }, self._frame)
 
     local main = Make("TextButton",{
         Size=UDim2.new(1,0,0,34),
@@ -534,7 +544,7 @@ function Tab:AddDropdown(text, options, default, callback)
     Corner(main, 5)
     Stroke(main, self._theme.Border)
 
-    Make("TextLabel",{
+    local lbl = Make("TextLabel",{
         Size=UDim2.new(1,-30,1,0), Position=UDim2.new(0,10,0,0),
         BackgroundTransparency=1, Text=text..":  "..tostring(selected),
         TextColor3=self._theme.Text, Font=Enum.Font.Gotham, TextSize=13,
@@ -543,7 +553,8 @@ function Tab:AddDropdown(text, options, default, callback)
     local arrow = Make("TextLabel",{
         Size=UDim2.new(0,20,0,20), Position=UDim2.new(1,-26,0.5,0),
         AnchorPoint=Vector2.new(0,0.5), BackgroundTransparency=1,
-        Text="▾", TextColor3=self._theme.TextDim, Font=Enum.Font.GothamBold, TextSize=14,
+        Text="v", TextColor3=self._theme.TextDim,
+        Font=Enum.Font.GothamBold, TextSize=14,
     }, main)
 
     local dropFrame = Make("Frame",{
@@ -563,10 +574,10 @@ function Tab:AddDropdown(text, options, default, callback)
             TextColor3=self._theme.TextDim, Font=Enum.Font.Gotham, TextSize=13,
             AutoButtonColor=false, BorderSizePixel=0, ZIndex=21,
         }, dropFrame)
-        self._anims:HoverEffect(ob, self._theme.TabHover, self._theme.TabNormal)
+        Animations:HoverEffect(ob, self._theme.TabHover, self._theme.TabNormal)
         ob.MouseButton1Click:Connect(function()
             selected=opt
-            main:FindFirstChildWhichIsA("TextLabel").Text = text..":  "..tostring(opt)
+            lbl.Text = text..":  "..tostring(opt)
             if callback then task.spawn(callback,opt) end
             open=false; dropFrame.Visible=false
             Animations:Tween(arrow,{Rotation=0})
@@ -581,9 +592,9 @@ function Tab:AddDropdown(text, options, default, callback)
     return {Get=function() return selected end}
 end
 
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 --  WINDOW OBJECT
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 local Window = {}
 Window.__index = Window
 
@@ -596,7 +607,6 @@ function Window:_build()
         IgnoreGuiInset = true,
     })
 
-    -- Try to parent to CoreGui, fallback to PlayerGui
     local ok2 = pcall(function()
         sg.Parent = game:GetService("CoreGui")
     end)
@@ -604,7 +614,7 @@ function Window:_build()
         sg.Parent = LocalPlayer:WaitForChild("PlayerGui")
     end
 
-    -- ── Outer Window ────────────────────────────────────────────────────────
+    -- -- Outer Window ----------------------------------------------------------
     local win = Make("Frame",{
         Name             = "Window",
         Size             = self.Size,
@@ -627,19 +637,18 @@ function Window:_build()
     self._sg  = sg
     self._win = win
 
-    -- ── Topbar ──────────────────────────────────────────────────────────────
+    -- -- Topbar ----------------------------------------------------------------
     local topbar = Make("Frame",{
         Name             = "Topbar",
         Size             = UDim2.new(1,0,0,36),
         BackgroundColor3 = theme.Topbar,
         BorderSizePixel  = 0,
     }, win)
-    Make("Frame",{   -- accent line
+    Make("Frame",{
         Size=UDim2.new(1,0,0,2), Position=UDim2.new(0,0,1,-2),
         BackgroundColor3=theme.TopbarAccent, BorderSizePixel=0,
     }, topbar)
 
-    -- Title
     Make("TextLabel",{
         Size=UDim2.new(1,-90,1,0), Position=UDim2.new(0,12,0,0),
         BackgroundTransparency=1,
@@ -648,26 +657,26 @@ function Window:_build()
         TextXAlignment=Enum.TextXAlignment.Left,
     }, topbar)
 
-    -- Close button
+    -- Close button [x]
     local closeBtn = Make("TextButton",{
         Size=UDim2.new(0,28,0,24),
         Position=UDim2.new(1,-34,0.5,0), AnchorPoint=Vector2.new(0,0.5),
         BackgroundColor3=Color3.fromRGB(200,60,60),
-        Text="✕", TextColor3=Color3.fromRGB(255,255,255),
-        Font=Enum.Font.GothamBold, TextSize=12,
+        Text="[x]", TextColor3=Color3.fromRGB(255,255,255),
+        Font=Enum.Font.GothamBold, TextSize=11,
         AutoButtonColor=false, BorderSizePixel=0,
     }, topbar)
     Corner(closeBtn, 5)
     Animations:HoverEffect(closeBtn, Color3.fromRGB(230,80,80), Color3.fromRGB(200,60,60))
     closeBtn.MouseButton1Click:Connect(function() self:Close() end)
 
-    -- Minimize button
+    -- Minimize button [-]
     local minBtn = Make("TextButton",{
         Size=UDim2.new(0,28,0,24),
         Position=UDim2.new(1,-66,0.5,0), AnchorPoint=Vector2.new(0,0.5),
         BackgroundColor3=Color3.fromRGB(200,150,30),
-        Text="─", TextColor3=Color3.fromRGB(255,255,255),
-        Font=Enum.Font.GothamBold, TextSize=12,
+        Text="[-]", TextColor3=Color3.fromRGB(255,255,255),
+        Font=Enum.Font.GothamBold, TextSize=11,
         AutoButtonColor=false, BorderSizePixel=0,
     }, topbar)
     Corner(minBtn, 5)
@@ -686,10 +695,10 @@ function Window:_build()
 
     MakeDraggable(win, topbar)
 
-    -- ── Sidebar ─────────────────────────────────────────────────────────────
+    -- -- Sidebar ---------------------------------------------------------------
     local sidebar = Make("Frame",{
         Name="Sidebar",
-        Size=UDim2.new(0,160,1,-36-32),  -- leave room for topbar and bottombar
+        Size=UDim2.new(0,160,1,-36-32),
         Position=UDim2.new(0,0,0,36),
         BackgroundColor3=theme.Sidebar,
         BorderSizePixel=0,
@@ -703,13 +712,12 @@ function Window:_build()
         PaddingRight=UDim.new(0,6),
     }, sidebar)
 
-    -- Sidebar separator line
     Make("Frame",{
         Size=UDim2.new(0,1,1,-36-32), Position=UDim2.new(0,160,0,36),
         BackgroundColor3=theme.Border, BorderSizePixel=0,
     }, win)
 
-    -- ── Content area ─────────────────────────────────────────────────────────
+    -- -- Content area ----------------------------------------------------------
     local contentHolder = Make("Frame",{
         Name="ContentHolder",
         Size=UDim2.new(1,-162,1,-36-32),
@@ -719,7 +727,7 @@ function Window:_build()
         ClipsDescendants=true,
     }, win)
 
-    -- ── Bottom bar ───────────────────────────────────────────────────────────
+    -- -- Bottom bar ------------------------------------------------------------
     local bottomBar = Make("Frame",{
         Name="BottomBar",
         Size=UDim2.new(1,0,0,32),
@@ -727,14 +735,13 @@ function Window:_build()
         BackgroundColor3=theme.BottomBar,
         BorderSizePixel=0,
     }, win)
-    -- top line
     Make("Frame",{
         Size=UDim2.new(1,0,0,1), BackgroundColor3=theme.Border, BorderSizePixel=0,
     }, bottomBar)
 
     local function BottomBtn(text, pos, callback)
         local b = Make("TextButton",{
-            Size=UDim2.new(0,88,0,22),
+            Size=UDim2.new(0,90,0,22),
             Position=pos,
             AnchorPoint=Vector2.new(0,0.5),
             BackgroundColor3=theme.BottomBtn,
@@ -753,17 +760,18 @@ function Window:_build()
         return b
     end
 
-    BottomBtn("🎨  Themes",   UDim2.new(0,8,0.5,0),  function() self:_openThemePanel() end)
-    BottomBtn("⌨  Keybinds", UDim2.new(0,104,0.5,0), function() self:_openKeybindPanel() end)
-    BottomBtn("⚙  Settings", UDim2.new(0,200,0.5,0), function() self:_openSettingsPanel() end)
+    -- Bottom bar buttons  no emojis, clean ASCII labels
+    BottomBtn("[ Themes ]",   UDim2.new(0,8,0.5,0),   function() self:_openThemePanel() end)
+    BottomBtn("[ Keybinds ]", UDim2.new(0,106,0.5,0), function() self:_openKeybindPanel() end)
+    BottomBtn("[ Settings ]", UDim2.new(0,204,0.5,0), function() self:_openSettingsPanel() end)
 
-    self._sidebar      = sidebar
-    self._contentHolder= contentHolder
-    self._bottomBar    = bottomBar
-    self._tabs         = {}
-    self._activeTab    = nil
+    self._sidebar       = sidebar
+    self._contentHolder = contentHolder
+    self._bottomBar     = bottomBar
+    self._tabs          = {}
+    self._activeTab     = nil
 
-    -- ── Overlay panel (for themes/keybinds/settings) ─────────────────────────
+    -- -- Overlay panel ---------------------------------------------------------
     self._overlay = Make("Frame",{
         Size=UDim2.new(1,-162,1,-36-32),
         Position=UDim2.new(0,162,0,36),
@@ -776,8 +784,8 @@ function Window:_build()
     local overlayClose = Make("TextButton",{
         Size=UDim2.new(0,24,0,24), Position=UDim2.new(1,-30,0,6),
         BackgroundColor3=Color3.fromRGB(200,60,60),
-        Text="✕", TextColor3=Color3.fromRGB(255,255,255),
-        Font=Enum.Font.GothamBold, TextSize=12,
+        Text="[x]", TextColor3=Color3.fromRGB(255,255,255),
+        Font=Enum.Font.GothamBold, TextSize=11,
         AutoButtonColor=false, BorderSizePixel=0, ZIndex=16,
     }, self._overlay)
     Corner(overlayClose, 5)
@@ -794,6 +802,7 @@ function Window:_build()
     }, self._overlay)
     Make("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder,Padding=UDim.new(0,8)}, self._overlayContent)
     Make("UIPadding",{PaddingLeft=UDim.new(0,14),PaddingTop=UDim.new(0,10),PaddingRight=UDim.new(0,14)}, self._overlayContent)
+
     self._overlayTitle = Make("TextLabel",{
         Size=UDim2.new(1,0,0,26), Position=UDim2.new(0,14,0,6),
         BackgroundTransparency=1, Text="", TextColor3=theme.Text,
@@ -814,8 +823,9 @@ function Window:_showOverlay(title)
     Animations:FadeIn(self._overlay, 0.15)
 end
 
+-- -- Theme Panel ---------------------------------------------------------------
 function Window:_openThemePanel()
-    self:_showOverlay("🎨  Themes")
+    self:_showOverlay(">> Themes")
     local names = {}
     for k in pairs(Themes) do table.insert(names, k) end
     table.sort(names)
@@ -836,24 +846,24 @@ function Window:_openThemePanel()
     end
 end
 
+-- -- Keybind Panel -------------------------------------------------------------
 function Window:_openKeybindPanel()
-    self:_showOverlay("⌨  Keybinds")
-    local info = Make("TextLabel",{
+    self:_showOverlay(">> Keybinds")
+    Make("TextLabel",{
         Size=UDim2.new(1,0,0,60),
         BackgroundTransparency=1,
         Text="Toggle GUI: "..tostring(self.Keybind)..
-             "\n\nTo change, update the Keybind property\nand re-call :SetKeybind(key).",
+             "\n\nTo change, call :SetKeybind(Enum.KeyCode.X)",
         TextColor3=self._theme.TextDim,
         Font=Enum.Font.Gotham, TextSize=13,
         TextXAlignment=Enum.TextXAlignment.Left,
         TextWrapped=true, ZIndex=17,
     }, self._overlayContent)
-    -- List all registered binds
     for name, bind in pairs(KeybindSystem._binds) do
         Make("TextLabel",{
             Size=UDim2.new(1,0,0,28),
             BackgroundTransparency=1,
-            Text="• "..name.." → "..tostring(bind.Key),
+            Text="  >> "..name.." -> "..tostring(bind.Key),
             TextColor3=self._theme.Text,
             Font=Enum.Font.Gotham, TextSize=13,
             TextXAlignment=Enum.TextXAlignment.Left, ZIndex=17,
@@ -861,26 +871,17 @@ function Window:_openKeybindPanel()
     end
 end
 
+-- -- Settings Panel ------------------------------------------------------------
 function Window:_openSettingsPanel()
-    self:_showOverlay("⚙  Settings")
-    -- Placeholder: expose flag to toggle notifications, etc.
+    self:_showOverlay(">> Settings")
     Make("TextLabel",{
         Size=UDim2.new(1,0,0,30),
         BackgroundTransparency=1,
-        Text="GUI Version: 1.0  |  External modules: "..tostring(#self._externalModules),
+        Text="GUI v1.0  |  Loaded modules: "..tostring(#self._externalModules),
         TextColor3=self._theme.TextDim,
         Font=Enum.Font.Gotham, TextSize=12,
         TextXAlignment=Enum.TextXAlignment.Left, ZIndex=17,
     }, self._overlayContent)
-
-    -- Toggle: show topbar title
-    local titleToggle = Make("Frame",{Size=UDim2.new(1,0,0,34),BackgroundTransparency=1,ZIndex=17},self._overlayContent)
-    Make("TextLabel",{
-        Size=UDim2.new(1,-54,1,0), BackgroundTransparency=1,
-        Text="Show Title", TextColor3=self._theme.Text,
-        Font=Enum.Font.Gotham, TextSize=13,
-        TextXAlignment=Enum.TextXAlignment.Left, ZIndex=17,
-    }, titleToggle)
 end
 
 function Window:_selectTab(tab)
@@ -890,12 +891,12 @@ function Window:_selectTab(tab)
     self._activeTab = tab
 end
 
--- ─── Public API ──────────────────────────────────────────────────────────────
+-- -- Public API ----------------------------------------------------------------
 function Window:AddTab(name, icon)
     local tab = setmetatable({
-        Name     = name,
-        Icon     = icon or "",
-        _window  = self,
+        Name    = name,
+        Icon    = icon or "",
+        _window = self,
     }, Tab)
     tab:_build(self._sidebar, self._contentHolder, self._theme, Animations)
     table.insert(self._tabs, tab)
@@ -909,10 +910,6 @@ function Window:ApplyTheme(name)
     local t = Themes[name]
     if not t then warn("Theme '"..name.."' not found.") return end
     self._theme = t
-    -- Rebuild colors across the GUI
-    -- (Re-building every element individually would be complex;
-    --  simplest robust approach is store refs or recreate.
-    --  For now we tween the main containers.)
     Animations:Tween(self._win, {BackgroundColor3 = t.Window})
     Animations:Tween(self._sidebar, {BackgroundColor3 = t.Sidebar})
     Animations:Tween(self._bottomBar, {BackgroundColor3 = t.BottomBar})
@@ -946,44 +943,42 @@ function Window:Destroy()
     self._sg:Destroy()
 end
 
--- ────────────────────────────────────────────────────────────────────────────
---  External Module Loader
--- ────────────────────────────────────────────────────────────────────────────
+-- -- External Module Loader ----------------------------------------------------
 function Window:LoadModule(url, ...)
     local ok3, result = pcall(function(...)
         return loadstring(game:HttpGet(url))(self, Animations, Themes, ...)
     end, ...)
     if not ok3 then
-        warn("[GUI] Failed to load external module from: "..url.."\n"..tostring(result))
+        warn("[GUI] Failed to load external module: "..url.."\n"..tostring(result))
         return nil
     end
     table.insert(self._externalModules, {url=url, module=result})
     return result
 end
 
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 --  GUI HANDLER  (public factory)
--- ════════════════════════════════════════════════════════════════════════════
+-- =============================================================================
 local GuiHandler = {}
 GuiHandler.__index = GuiHandler
 
 function GuiHandler:CreateWindow(opts)
     opts = opts or {}
     local win = setmetatable({
-        Title           = opts.Title   or "GUI",
-        Size            = opts.Size    or UDim2.new(0,600,0,420),
-        Keybind         = opts.Keybind or Enum.KeyCode.RightShift,
-        _theme          = Themes[opts.Theme or "Dark"],
-        _externalModules= {},
+        Title            = opts.Title   or "GUI",
+        Size             = opts.Size    or UDim2.new(0,620,0,430),
+        Keybind          = opts.Keybind or Enum.KeyCode.RightShift,
+        _theme           = Themes[opts.Theme or "Dark"],
+        _externalModules = {},
     }, Window)
     win:_build()
     win:SetKeybind(win.Keybind)
     return win
 end
 
--- Expose sub-systems so external modules can use them
-GuiHandler.Themes       = Themes
-GuiHandler.Keybinds     = KeybindSystem
-GuiHandler.Animations   = Animations
+-- Expose sub-systems for external modules
+GuiHandler.Themes     = Themes
+GuiHandler.Keybinds   = KeybindSystem
+GuiHandler.Animations = Animations
 
 return GuiHandler

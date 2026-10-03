@@ -1,12 +1,12 @@
 --[[
-    ╔═══════════════════════════════════════════╗
-    ║         ANIMATIONS MODULE v1.0            ║
-    ║   Connect via: loadstring(...)()          ║
-    ╚═══════════════════════════════════════════╝
+    =====================================================
+         ANIMATIONS MODULE v1.0
+         loadstring(game:HttpGet(URL))()
+    =====================================================
 
     Usage:
-        local Animations = loadstring(game:HttpGet("RAW_URL_HERE"))()
-        Animations:Tween(frame, {Size = UDim2.new(...)}, 0.3)
+        local Anim = loadstring(game:HttpGet("RAW_URL_HERE"))()
+        Anim:Tween(frame, {Size = UDim2.new(...)}, 0.3)
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -15,10 +15,10 @@ local RunService   = game:GetService("RunService")
 local Animations = {}
 Animations.__index = Animations
 
--- ── Default easing ─────────────────────────────────────────────────────────
+-- -- Default easing ----------------------------------------------------------
 local DEFAULT_INFO = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 
--- ── Core Tween ──────────────────────────────────────────────────────────────
+-- -- Core Tween --------------------------------------------------------------
 function Animations:Tween(instance, props, duration, style, direction)
     local info = TweenInfo.new(
         duration  or 0.25,
@@ -30,14 +30,14 @@ function Animations:Tween(instance, props, duration, style, direction)
     return t
 end
 
--- ── Fade In ─────────────────────────────────────────────────────────────────
+-- -- Fade In ------------------------------------------------------------------
 function Animations:FadeIn(instance, duration)
     instance.BackgroundTransparency = 1
     instance.Visible = true
     return self:Tween(instance, {BackgroundTransparency = 0}, duration or 0.2)
 end
 
--- ── Fade Out ────────────────────────────────────────────────────────────────
+-- -- Fade Out -----------------------------------------------------------------
 function Animations:FadeOut(instance, duration, callback)
     local t = self:Tween(instance, {BackgroundTransparency = 1}, duration or 0.2)
     t.Completed:Connect(function()
@@ -47,7 +47,7 @@ function Animations:FadeOut(instance, duration, callback)
     return t
 end
 
--- ── Slide In (from direction) ────────────────────────────────────────────────
+-- -- Slide In (from direction) -------------------------------------------------
 -- direction: "left" | "right" | "top" | "bottom"
 function Animations:SlideIn(instance, direction, duration)
     local orig = instance.Position
@@ -65,7 +65,7 @@ function Animations:SlideIn(instance, direction, duration)
     return self:Tween(instance, {Position = orig}, duration or 0.3)
 end
 
--- ── Slide Out ────────────────────────────────────────────────────────────────
+-- -- Slide Out -----------------------------------------------------------------
 function Animations:SlideOut(instance, direction, duration, callback)
     local orig = instance.Position
     local offX, offY = 0, 0
@@ -81,13 +81,13 @@ function Animations:SlideOut(instance, direction, duration, callback)
     local t = self:Tween(instance, {Position = target}, duration or 0.3)
     t.Completed:Connect(function()
         instance.Visible = false
-        instance.Position = orig -- reset for next use
+        instance.Position = orig
         if callback then callback() end
     end)
     return t
 end
 
--- ── Scale Bounce ─────────────────────────────────────────────────────────────
+-- -- Scale Bounce --------------------------------------------------------------
 function Animations:Bounce(instance, duration)
     local orig = instance.Size
     local big  = UDim2.new(
@@ -101,12 +101,10 @@ function Animations:Bounce(instance, duration)
     end)
 end
 
--- ── Hover Highlight ──────────────────────────────────────────────────────────
--- Call once; automatically manages MouseEnter / MouseLeave
+-- -- Hover Highlight -----------------------------------------------------------
 function Animations:HoverEffect(instance, hoverColor, normalColor, duration)
     normalColor = normalColor or instance.BackgroundColor3
     duration    = duration or 0.15
-
     instance.MouseEnter:Connect(function()
         self:Tween(instance, {BackgroundColor3 = hoverColor}, duration)
     end)
@@ -115,8 +113,7 @@ function Animations:HoverEffect(instance, hoverColor, normalColor, duration)
     end)
 end
 
--- ── Tab Switch ───────────────────────────────────────────────────────────────
--- Fades out old content, fades in new
+-- -- Tab Switch ----------------------------------------------------------------
 function Animations:SwitchTab(oldFrame, newFrame, duration)
     if oldFrame == newFrame then return end
     duration = duration or 0.18
@@ -125,7 +122,7 @@ function Animations:SwitchTab(oldFrame, newFrame, duration)
     end)
 end
 
--- ── Window Open / Close ──────────────────────────────────────────────────────
+-- -- Window Open / Close -------------------------------------------------------
 function Animations:OpenWindow(windowFrame, duration)
     windowFrame.Size = UDim2.new(0, 0, 0, 0)
     windowFrame.Visible = true
@@ -144,7 +141,7 @@ function Animations:CloseWindow(windowFrame, duration, callback)
     return t
 end
 
--- ── Typewriter text ──────────────────────────────────────────────────────────
+-- -- Typewriter text -----------------------------------------------------------
 function Animations:Typewriter(label, text, speed)
     speed = speed or 0.04
     label.Text = ""
@@ -156,7 +153,7 @@ function Animations:Typewriter(label, text, speed)
     end)
 end
 
--- ── Ripple effect (click feedback) ──────────────────────────────────────────
+-- -- Ripple effect (click feedback) -------------------------------------------
 function Animations:Ripple(parent, x, y, color)
     color = color or Color3.fromRGB(255,255,255)
     local ripple = Instance.new("Frame")

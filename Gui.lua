@@ -4,12 +4,14 @@
          loadstring(game:HttpGet(URL))()
     =====================================================
 
-    Design:
-      * Layouts separated cleanly by distinct color values (no 1px barrier divider lines)
-      * Topbar, Bottombar, Tab bar (sidebar), and all UI elements have solid bottom shadow lips
-      * Selecting a tab highlights it white with dark text and updates the top-left title to the current tab
+    Features:
+      * Pure color layout separation (no 1px barrier divider lines)
+      * Solid bottom shadow lips on Topbar, Bottombar, Sidebar, and all UI elements
+      * Tab selection: Highlight solid white with dark text (no hover interference or half-white bug)
+      * Top-left text shows the current tab and clicking it toggles Dark <-> Dark Translucent
+      * Settings & Keybinds tabs: clicking once opens, clicking twice closes
+      * Built-in Anti-Fling system (disables collisions and cancels rogue trajectory velocities)
       * Tactile 2px downward button press animation compressing into bottom lip
-      * Smooth symmetrical window open/close and tab transitions
 ]]
 
 -- =============================================================================
@@ -32,7 +34,7 @@ local _ok, _ = pcall(function()
 end)
 if not _ok then
     Animations = {}
-    local function I(d,s,dir) return TweenInfo.new(d or 0.15, s or Enum.EasingStyle.Quart, dir or Enum.EasingDirection.Out) end
+    local function I(d, s, dir) return TweenInfo.new(d or 0.15, s or Enum.EasingStyle.Quart, dir or Enum.EasingDirection.Out) end
     function Animations:Tween(inst, props, dur, s, dir)
         local t = TweenService:Create(inst, I(dur, s, dir), props)
         t:Play()
@@ -106,6 +108,43 @@ if not _ok then
             if cb then cb() end
         end)
         return t
+    end
+end
+
+-- =============================================================================
+--  ANTI-FLING SYSTEM (Cancels other players' collisions & runaway velocity)
+-- =============================================================================
+local AntiFling = {
+    Enabled      = false,
+    _steppedConn = nil,
+}
+
+function AntiFling:SetEnabled(state)
+    self.Enabled = state
+    if state then
+        if self._steppedConn then self._steppedConn:Disconnect() end
+        self._steppedConn = RunService.Stepped:Connect(function()
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character then
+                    for _, part in ipairs(player.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                            if part.AssemblyLinearVelocity.Magnitude > 100 then
+                                part.AssemblyLinearVelocity = Vector3.zero
+                            end
+                            if part.AssemblyAngularVelocity.Magnitude > 100 then
+                                part.AssemblyAngularVelocity = Vector3.zero
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        if self._steppedConn then
+            self._steppedConn:Disconnect()
+            self._steppedConn = nil
+        end
     end
 end
 
@@ -217,10 +256,6 @@ local function Darken(c, factor)
     )
 end
 
---[[
-    MakeBezelBox
-    Container with a full-width bottom shadow lip.
-]]
 local function MakeBezelBox(parent, size, pos, mainColor, lipColor)
     lipColor = lipColor or Darken(mainColor, 0.60)
 
@@ -253,11 +288,7 @@ local function MakeBezelBox(parent, size, pos, mainColor, lipColor)
     return container, body, lip
 end
 
---[[
-    MakeBezelButton
-    Clickable button with bottom shadow lip and tactile 2px downward press animation.
-]]
-local function MakeBezelButton(parent, size, pos, mainColor, lipColor, hoverColor, text, textColor, font, textSize)
+local function MakeBezelButton(parent, size, pos, mainColor, lipColor, hoverColor, text, textColor, font, textSize, skipHover)
     lipColor   = lipColor   or Darken(mainColor, 0.60)
     hoverColor = hoverColor or Color3.fromRGB(
         math.clamp(math.floor(mainColor.R * 255 * 1.2), 0, 255),
@@ -296,7 +327,9 @@ local function MakeBezelButton(parent, size, pos, mainColor, lipColor, hoverColo
         ZIndex           = container.ZIndex + 2,
     }, container)
 
-    Animations:HoverEffect(btn, hoverColor, mainColor)
+    if not skipHover then
+        Animations:HoverEffect(btn, hoverColor, mainColor)
+    end
     Animations:PressEffect(btn, btn, 2)
 
     return container, btn, lip
@@ -369,13 +402,14 @@ function Tab:_build(sidebarScroll, contentHolder, theme, anims)
         self.Name,
         theme.TextDim,
         Enum.Font.GothamMedium,
-        12
+        12,
+        true -- skipHover: handled explicitly so it never interferes with active white state
     )
 
     self._btn = btn
     self._lip = lip
 
-    -- Hover behavior respecting active selection
+    -- Hover behavior: only changes color when not actively selected
     btn.MouseEnter:Connect(function()
         if not self._selected then
             anims:Tween(btn, {BackgroundColor3 = self._theme.TabHover}, 0.12)
@@ -421,14 +455,14 @@ end
 function Tab:_select(state, theme)
     self._selected = state
     if state then
-        -- Highlight solid white with readable dark text and soft light shadow lip
+        -- Solid white highlight with dark text and light shadow lip
         self._anims:Tween(self._btn, {
             BackgroundColor3 = Color3.fromRGB(255, 255, 255),
             TextColor3       = Color3.fromRGB(20, 20, 26),
-        }, 0.14)
+        }, 0.12)
         self._anims:Tween(self._lip, {
             BackgroundColor3 = Color3.fromRGB(195, 195, 205),
-        }, 0.14)
+        }, 0.12)
     else
         self._anims:Tween(self._btn, {
             BackgroundColor3 = theme.TabNormal,
@@ -860,10 +894,10 @@ function Window:_build()
         ZIndex           = 3,
     }, topbar)
 
-    -- Top-left title label (dynamically updates to current tab)
-    local titleLabel = Make("TextLabel", {
-        Name             = "TitleLabel",
-        Size             = UDim2.new(1, -90, 1, -LIP_H),
+    -- Top-left title button: displays current tab; clicking toggles translucent mode
+    local titleBtn = Make("TextButton", {
+        Name             = "TitleButton",
+        Size             = UDim2.new(0, 180, 1, -LIP_H),
         Position         = UDim2.new(0, 12, 0, 0),
         BackgroundTransparency = 1,
         Text             = self.Title,
@@ -871,8 +905,22 @@ function Window:_build()
         Font             = Enum.Font.GothamBold,
         TextSize         = 13,
         TextXAlignment   = Enum.TextXAlignment.Left,
+        AutoButtonColor  = false,
         ZIndex           = 4,
     }, topbar)
+
+    self._titleLabel    = titleBtn
+    self._isTranslucent = false
+
+    titleBtn.MouseEnter:Connect(function()
+        Animations:Tween(titleBtn, {TextColor3 = T.Accent}, 0.12)
+    end)
+    titleBtn.MouseLeave:Connect(function()
+        Animations:Tween(titleBtn, {TextColor3 = T.Text}, 0.12)
+    end)
+    titleBtn.MouseButton1Click:Connect(function()
+        self:ToggleTranslucent()
+    end)
 
     -- Close [X] Button (with bottom lip)
     local _, closeBtn, _ = MakeBezelButton(
@@ -926,7 +974,7 @@ function Window:_build()
         ZIndex           = 2,
     }, win)
 
-    -- Scrolling container for tabs (leaving room for bottom lip)
+    -- Scrolling container for tabs (leaves room at bottom for sidebar shadow lip)
     local sidebarScroll = Make("ScrollingFrame", {
         Name                 = "TabList",
         Size                 = UDim2.new(1, 0, 1, -LIP_H),
@@ -993,7 +1041,7 @@ function Window:_build()
         ZIndex           = 3,
     }, bottomBar)
 
-    local btnW = 68
+    local btnW = 76
     local function BottomBtn(text, xOff, cb)
         local _, btn, _ = MakeBezelButton(
             bottomBar,
@@ -1013,13 +1061,12 @@ function Window:_build()
         return btn
     end
 
-    BottomBtn("Themes",   -(btnW * 3 + 12), function() self:_openOverlay("Themes") end)
-    BottomBtn("Keybinds", -(btnW * 2 + 8),  function() self:_openOverlay("Keybinds") end)
-    BottomBtn("Settings", -(btnW * 1 + 4),  function() self:_openOverlay("Settings") end)
+    -- Bottom bar buttons: Keybinds & Settings (clicking twice toggles closed)
+    BottomBtn("Keybinds", -(btnW * 2 + 10), function() self:_toggleOverlay("Keybinds") end)
+    BottomBtn("Settings", -(btnW * 1 + 5),  function() self:_toggleOverlay("Settings") end)
 
     self._topbar        = topbar
     self._topbarLip     = topbarLip
-    self._titleLabel    = titleLabel
     self._sidebar       = sidebar
     self._sidebarScroll = sidebarScroll
     self._sidebarLip    = sidebarLip
@@ -1029,7 +1076,7 @@ function Window:_build()
     self._tabs          = {}
     self._activeTab     = nil
 
-    -- ---- Overlay Panel (Themes, Keybinds, Settings) --------------------------
+    -- ---- Overlay Panel (Settings, Keybinds) ----------------------------------
     self._overlay = Make("Frame", {
         Size             = UDim2.new(1, -SIDEBAR_W, 1, -(TOPBAR_H + BOTTOMBAR_H)),
         Position         = UDim2.new(0, SIDEBAR_W, 0, TOPBAR_H),
@@ -1053,6 +1100,7 @@ function Window:_build()
         10
     )
     ovClose.MouseButton1Click:Connect(function()
+        self._currentOverlayMode = nil
         Animations:SlideOutRight(self._overlay, 0.14)
     end)
 
@@ -1090,38 +1138,25 @@ function Window:_clearOverlay()
     end
 end
 
+-- Clicking the same bottom button twice toggles it closed
+function Window:_toggleOverlay(mode)
+    if self._overlay.Visible and self._currentOverlayMode == mode then
+        self._currentOverlayMode = nil
+        Animations:SlideOutRight(self._overlay, 0.14)
+        return
+    end
+    self._currentOverlayMode = mode
+    self:_openOverlay(mode)
+end
+
 function Window:_openOverlay(mode)
     self:_clearOverlay()
     local T = self._theme
 
-    if mode == "Themes" then
-        self._overlayTitle.Text = "-- Themes"
-        local names = {}
-        for k in pairs(Themes) do table.insert(names, k) end
-        table.sort(names)
-        for _, name in ipairs(names) do
-            local _, btn, _ = MakeBezelButton(
-                self._overlayScroll,
-                UDim2.new(1, 0, 0, 30),
-                nil,
-                T.Element,
-                T.ElementLip,
-                T.ElementHov,
-                name,
-                T.Text,
-                Enum.Font.GothamMedium,
-                12
-            )
-            btn.MouseButton1Click:Connect(function()
-                self:ApplyTheme(name)
-                Animations:SlideOutRight(self._overlay, 0.14)
-            end)
-        end
-
-    elseif mode == "Keybinds" then
+    if mode == "Keybinds" then
         self._overlayTitle.Text = "-- Keybinds"
         Make("TextLabel", {
-            Size             = UDim2.new(1, 0, 0, 20),
+            Size             = UDim2.new(1, 0, 0, 22),
             BackgroundTransparency = 1,
             Text             = "Toggle Key: "..tostring(self.Keybind),
             TextColor3       = T.TextDim,
@@ -1130,6 +1165,7 @@ function Window:_openOverlay(mode)
             TextXAlignment   = Enum.TextXAlignment.Left,
             ZIndex           = 17,
         }, self._overlayScroll)
+
         for name, bind in pairs(KeybindSystem._binds) do
             Make("TextLabel", {
                 Size             = UDim2.new(1, 0, 0, 18),
@@ -1145,13 +1181,52 @@ function Window:_openOverlay(mode)
 
     elseif mode == "Settings" then
         self._overlayTitle.Text = "-- Settings"
+
+        -- Anti-Fling quick toggle in Settings
+        local afState = AntiFling.Enabled
+        local _, afBtn, _ = MakeBezelButton(
+            self._overlayScroll,
+            UDim2.new(1, 0, 0, 30),
+            nil,
+            afState and Color3.fromRGB(40, 120, 60) or T.Element,
+            T.ElementLip,
+            T.ElementHov,
+            "Anti-Fling: "..(afState and "ENABLED" or "DISABLED"),
+            T.Text,
+            Enum.Font.GothamMedium,
+            12
+        )
+        afBtn.MouseButton1Click:Connect(function()
+            afState = not afState
+            AntiFling:SetEnabled(afState)
+            afBtn.Text = "Anti-Fling: "..(afState and "ENABLED" or "DISABLED")
+            afBtn.BackgroundColor3 = afState and Color3.fromRGB(40, 120, 60) or T.Element
+        end)
+
+        -- Translucent mode toggle in Settings
+        local _, transBtn, _ = MakeBezelButton(
+            self._overlayScroll,
+            UDim2.new(1, 0, 0, 30),
+            nil,
+            T.Element,
+            T.ElementLip,
+            T.ElementHov,
+            "Toggle Translucent Mode (or click top-left text)",
+            T.Text,
+            Enum.Font.GothamMedium,
+            11
+        )
+        transBtn.MouseButton1Click:Connect(function()
+            self:ToggleTranslucent()
+        end)
+
         Make("TextLabel", {
             Size             = UDim2.new(1, 0, 0, 20),
             BackgroundTransparency = 1,
-            Text             = "Version: 1.0   Modules: "..tostring(#self._externalModules),
+            Text             = "Tip: Click top-left text to toggle Dark Translucent.",
             TextColor3       = T.TextDim,
             Font             = Enum.Font.Gotham,
-            TextSize         = 12,
+            TextSize         = 11,
             TextXAlignment   = Enum.TextXAlignment.Left,
             ZIndex           = 17,
         }, self._overlayScroll)
@@ -1161,14 +1236,29 @@ function Window:_openOverlay(mode)
     Animations:SlideInRight(self._overlay, 0.16)
 end
 
+function Window:ToggleTranslucent()
+    self._isTranslucent = not self._isTranslucent
+    local alpha = self._isTranslucent and 0.35 or 0
+    Animations:Tween(self._win,           {BackgroundTransparency = alpha}, 0.18)
+    Animations:Tween(self._topbar,        {BackgroundTransparency = alpha}, 0.18)
+    Animations:Tween(self._sidebar,       {BackgroundTransparency = alpha}, 0.18)
+    Animations:Tween(self._contentHolder, {BackgroundTransparency = alpha}, 0.18)
+    Animations:Tween(self._bottomBar,     {BackgroundTransparency = alpha}, 0.18)
+    if self._overlay then
+        Animations:Tween(self._overlay,   {BackgroundTransparency = alpha}, 0.18)
+    end
+end
+
 function Window:_selectTab(tab)
+    if self._activeTab == tab then return end
     local oldFrame = self._activeTab and self._activeTab._frame or nil
+
     for _, t in ipairs(self._tabs) do
         t:_select(t == tab, self._theme)
     end
     self._activeTab = tab
 
-    -- Update the top-left title to the current selected tab
+    -- Dynamically update top-left text to the current tab
     if self._titleLabel then
         self._titleLabel.Text = tab.Name
     end
@@ -1225,6 +1315,7 @@ function Window:Toggle()
 end
 
 function Window:Destroy()
+    AntiFling:SetEnabled(false)
     self._sg:Destroy()
 end
 
@@ -1263,5 +1354,6 @@ end
 GuiHandler.Themes     = Themes
 GuiHandler.Keybinds   = KeybindSystem
 GuiHandler.Animations = Animations
+GuiHandler.AntiFling  = AntiFling
 
 return GuiHandler

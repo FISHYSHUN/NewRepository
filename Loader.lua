@@ -42,7 +42,7 @@ homeTab:AddSlider("Walk Speed", 16, 200, 16, function(val)
         char.Humanoid.WalkSpeed = val
     end
 end)
-
+--
 local exploitTab = window:AddTab("Exploit")
 exploitTab:AddLabel("Exploit tools")
 exploitTab:AddButton("Kill All NPCs", function()

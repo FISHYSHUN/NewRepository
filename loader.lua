@@ -5,7 +5,7 @@
 	Or host the files (e.g. GitHub raw) and set BASE_URL below.
 ]]
 local ROOT = "CheatMenuUI/"
-local BASE_URL = nil -- e.g. "https://raw.githubusercontent.com/you/repo/main/CheatMenuUI/"
+local BASE_URL = "https://raw.githubusercontent.com/FISHYSHUN/NewRepository/main/" -- e.g. "https://raw.githubusercontent.com/you/repo/main/CheatMenuUI/"
 local MODULES = { "core", "config", "themes", "kit", "features", "commands", "shell", "pages", "init" }
 
 pcall(function()
